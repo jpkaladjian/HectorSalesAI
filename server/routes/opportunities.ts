@@ -318,7 +318,176 @@ router.get("/dashboard/manager", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // ============================================
-// CRUD OPPORTUNITÉS
+// OBJECTIFS COMMERCIAUX (Bug Fix #5: MOVED BEFORE /:id)
+// ============================================
+
+// POST /api/opportunities/objectives - Créer objectif
+router.post("/objectives", isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const validatedData = insertSalesObjectiveSchema.parse({
+      ...req.body,
+      entity: req.session.entity,
+      createdBy: req.session.userId,
+    });
+
+    const [objective] = await db
+      .insert(salesObjectives)
+      .values(validatedData)
+      .returning();
+
+    res.json({
+      success: true,
+      objective,
+    });
+  } catch (error: any) {
+    console.error("Error creating objective:", error);
+    res.status(400).json({
+      error: "Erreur lors de la création de l'objectif",
+      details: error.message,
+    });
+  }
+});
+
+// GET /api/opportunities/objectives - Liste objectifs
+router.get("/objectives", isAuthenticated, async (req, res) => {
+  try {
+    const { level, userId } = req.query;
+
+    const conditions = [eq(salesObjectives.entity, req.session.entity!)];
+
+    if (level) {
+      conditions.push(eq(salesObjectives.level, level as string));
+    }
+    if (userId) {
+      conditions.push(eq(salesObjectives.userId, userId as string));
+    }
+
+    const objectives = await db
+      .select()
+      .from(salesObjectives)
+      .where(and(...conditions))
+      .orderBy(desc(salesObjectives.createdAt));
+
+    res.json({
+      success: true,
+      objectives,
+    });
+  } catch (error: any) {
+    console.error("Error fetching objectives:", error);
+    res.status(500).json({
+      error: "Erreur lors de la récupération des objectifs",
+      details: error.message,
+    });
+  }
+});
+
+// POST /api/opportunities/trigger-worker - Déclencher manuellement un worker d'enrichissement
+router.post("/trigger-worker", isAuthenticated, async (req, res) => {
+  try {
+    const { opportunityId, workerType } = req.body;
+
+    if (!opportunityId || !workerType) {
+      return res.status(400).json({
+        error: "opportunityId et workerType sont requis",
+      });
+    }
+
+    // Validation workerType
+    const validWorkerTypes = ['cascade', 'disc', 'gps'];
+    if (!validWorkerTypes.includes(workerType)) {
+      return res.status(400).json({
+        error: "workerType invalide",
+        allowedTypes: validWorkerTypes,
+      });
+    }
+
+    // Vérifier que l'opportunité existe et appartient à l'entity
+    const [opportunity] = await db
+      .select()
+      .from(opportunities)
+      .where(
+        and(
+          eq(opportunities.id, opportunityId),
+          eq(opportunities.entity, req.session.entity!),
+          sql`${opportunities.deletedAt} IS NULL`
+        )
+      );
+
+    if (!opportunity) {
+      return res.status(404).json({
+        error: "Opportunité non trouvée",
+      });
+    }
+
+    // Récupérer la queue boss via prospectionQueue
+    const boss = prospectionQueue.getBoss();
+    console.log('[TRIGGER-WORKER] boss:', boss ? 'OK' : 'NULL');
+    if (!boss) {
+      return res.status(500).json({
+        error: "Queue non disponible",
+      });
+    }
+
+    // Mapper workerType vers le nom de la queue
+    const queueNames: Record<string, string> = {
+      'cascade': 'opp-cascade-enrichment',
+      'disc': 'opp-disc-profiling',
+      'gps': 'opp-gps-geocoding',
+    };
+
+    const queueName = queueNames[workerType];
+    console.log('[TRIGGER-WORKER] queueName:', queueName);
+
+    // Créer la queue si elle n'existe pas (pg-boss v10+ requirement)
+    try {
+      await boss.createQueue(queueName, {
+        retryLimit: 3,
+        retryDelay: 60,
+        retryBackoff: true,
+      });
+      console.log('[TRIGGER-WORKER] Queue created/verified:', queueName);
+    } catch (createError: any) {
+      // Queue may already exist, that's OK
+      console.log('[TRIGGER-WORKER] Queue may already exist:', queueName);
+    }
+
+    // Enqueuer le worker
+    let jobId;
+    try {
+      jobId = await boss.send(queueName, {
+        opportunityId,
+        userId: req.session.userId,
+      }, {
+        retryLimit: 3,
+        retryDelay: 60,
+        retryBackoff: true,
+      });
+      console.log('[TRIGGER-WORKER] jobId:', jobId);
+    } catch (sendError: any) {
+      console.error('[TRIGGER-WORKER] ERROR calling boss.send():', sendError);
+      console.error('[TRIGGER-WORKER] ERROR stack:', sendError.stack);
+      return res.status(500).json({
+        error: "Erreur lors de l'enqueue du worker",
+        details: sendError.message,
+      });
+    }
+
+    res.status(202).json({
+      success: true,
+      jobId,
+      message: `Worker ${workerType} enqueué pour opportunité ${opportunityId}`,
+    });
+  } catch (error: any) {
+    console.error("Error triggering worker:", error);
+    res.status(500).json({
+      error: "Erreur lors du déclenchement du worker",
+      details: error.message,
+    });
+  }
+});
+
+// ============================================
+// CRUD OPPORTUNITÉS (/:id routes MUST be AFTER static routes)
 // ============================================
 
 // GET /api/opportunities/:id - Détail opportunité
@@ -642,175 +811,6 @@ router.get("/:id/calls", isAuthenticated, async (req, res) => {
     console.error("Error fetching call history:", error);
     res.status(500).json({
       error: "Erreur lors de la récupération de l'historique des appels",
-      details: error.message,
-    });
-  }
-});
-
-// ============================================
-// OBJECTIFS COMMERCIAUX
-// ============================================
-
-// POST /api/opportunities/objectives - Créer objectif
-router.post("/objectives", isAuthenticated, isAdmin, async (req, res) => {
-  try {
-    const validatedData = insertSalesObjectiveSchema.parse({
-      ...req.body,
-      entity: req.session.entity,
-      createdBy: req.session.userId,
-    });
-
-    const [objective] = await db
-      .insert(salesObjectives)
-      .values(validatedData)
-      .returning();
-
-    res.json({
-      success: true,
-      objective,
-    });
-  } catch (error: any) {
-    console.error("Error creating objective:", error);
-    res.status(400).json({
-      error: "Erreur lors de la création de l'objectif",
-      details: error.message,
-    });
-  }
-});
-
-// GET /api/opportunities/objectives - Liste objectifs
-router.get("/objectives", isAuthenticated, async (req, res) => {
-  try {
-    const { level, userId } = req.query;
-
-    const conditions = [eq(salesObjectives.entity, req.session.entity!)];
-
-    if (level) {
-      conditions.push(eq(salesObjectives.level, level as string));
-    }
-    if (userId) {
-      conditions.push(eq(salesObjectives.userId, userId as string));
-    }
-
-    const objectives = await db
-      .select()
-      .from(salesObjectives)
-      .where(and(...conditions))
-      .orderBy(desc(salesObjectives.createdAt));
-
-    res.json({
-      success: true,
-      objectives,
-    });
-  } catch (error: any) {
-    console.error("Error fetching objectives:", error);
-    res.status(500).json({
-      error: "Erreur lors de la récupération des objectifs",
-      details: error.message,
-    });
-  }
-});
-
-// POST /api/opportunities/trigger-worker - Déclencher manuellement un worker d'enrichissement
-router.post("/trigger-worker", isAuthenticated, async (req, res) => {
-  try {
-    const { opportunityId, workerType } = req.body;
-
-    if (!opportunityId || !workerType) {
-      return res.status(400).json({
-        error: "opportunityId et workerType sont requis",
-      });
-    }
-
-    // Validation workerType
-    const validWorkerTypes = ['cascade', 'disc', 'gps'];
-    if (!validWorkerTypes.includes(workerType)) {
-      return res.status(400).json({
-        error: "workerType invalide",
-        allowedTypes: validWorkerTypes,
-      });
-    }
-
-    // Vérifier que l'opportunité existe et appartient à l'entity
-    const [opportunity] = await db
-      .select()
-      .from(opportunities)
-      .where(
-        and(
-          eq(opportunities.id, opportunityId),
-          eq(opportunities.entity, req.session.entity!),
-          sql`${opportunities.deletedAt} IS NULL`
-        )
-      );
-
-    if (!opportunity) {
-      return res.status(404).json({
-        error: "Opportunité non trouvée",
-      });
-    }
-
-    // Récupérer la queue boss via prospectionQueue
-    const boss = prospectionQueue.getBoss();
-    console.log('[TRIGGER-WORKER] boss:', boss ? 'OK' : 'NULL');
-    if (!boss) {
-      return res.status(500).json({
-        error: "Queue non disponible",
-      });
-    }
-
-    // Mapper workerType vers le nom de la queue
-    const queueNames: Record<string, string> = {
-      'cascade': 'opp-cascade-enrichment',
-      'disc': 'opp-disc-profiling',
-      'gps': 'opp-gps-geocoding',
-    };
-
-    const queueName = queueNames[workerType];
-    console.log('[TRIGGER-WORKER] queueName:', queueName);
-
-    // Créer la queue si elle n'existe pas (pg-boss v10+ requirement)
-    try {
-      await boss.createQueue(queueName, {
-        retryLimit: 3,
-        retryDelay: 60,
-        retryBackoff: true,
-      });
-      console.log('[TRIGGER-WORKER] Queue created/verified:', queueName);
-    } catch (createError: any) {
-      // Queue may already exist, that's OK
-      console.log('[TRIGGER-WORKER] Queue may already exist:', queueName);
-    }
-
-    // Enqueuer le worker
-    let jobId;
-    try {
-      jobId = await boss.send(queueName, {
-        opportunityId,
-        userId: req.session.userId,
-      }, {
-        retryLimit: 3,
-        retryDelay: 60,
-        retryBackoff: true,
-      });
-      console.log('[TRIGGER-WORKER] jobId:', jobId);
-    } catch (sendError: any) {
-      console.error('[TRIGGER-WORKER] ERROR calling boss.send():', sendError);
-      console.error('[TRIGGER-WORKER] ERROR stack:', sendError.stack);
-      return res.status(500).json({
-        error: "Erreur lors de l'enqueue du worker",
-        details: sendError.message,
-      });
-    }
-
-    res.status(202).json({
-      success: true,
-      jobId,
-      message: `Worker ${workerType} enqueué pour opportunité ${opportunityId}`,
-    });
-  } catch (error: any) {
-    console.error("Error triggering worker:", error);
-    res.status(500).json({
-      error: "Erreur lors du déclenchement du worker",
       details: error.message,
     });
   }
