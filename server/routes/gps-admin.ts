@@ -12,6 +12,8 @@ import { eq, and, gte, desc, sql } from 'drizzle-orm';
 import { configCacheService, encryptionService } from '../services/gps';
 import { batchGeocodingService } from '../services/gps/batchGeocodingService';
 import { z } from 'zod';
+// Bug Fix #2: Import auth middleware
+import { isAuthenticated, isAdmin } from '../auth';
 
 const router = express.Router();
 
@@ -55,10 +57,20 @@ const apiCredentialSchema = z.object({
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GET /api/admin/gps/config/:entity - Récupérer config GPS
+// Bug Fix #3: Helper function for building WHERE conditions
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-router.get('/config/:entity', async (req: Request, res: Response) => {
+function buildConditions(conditions: (ReturnType<typeof eq> | undefined)[]) {
+  const validConditions = conditions.filter((c): c is ReturnType<typeof eq> => c !== undefined);
+  return validConditions.length > 0 ? and(...validConditions) : undefined;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GET /api/admin/gps/config/:entity - Récupérer config GPS
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+router.get('/config/:entity', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const { entity } = req.params;
 
@@ -86,9 +98,10 @@ router.get('/config/:entity', async (req: Request, res: Response) => {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PUT /api/admin/gps/config/:entity - Mettre à jour config GPS
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-router.put('/config/:entity', async (req: Request, res: Response) => {
+router.put('/config/:entity', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const { entity } = req.params;
 
@@ -101,7 +114,7 @@ router.put('/config/:entity', async (req: Request, res: Response) => {
 
     const validatedData = updateConfigSchema.parse(req.body);
 
-    // Mettre à jour config (use session.userId instead of req.user.id)
+    // Mettre à jour config
     const [updated] = await db
       .update(gpsSystemConfig)
       .set({
@@ -139,15 +152,33 @@ router.put('/config/:entity', async (req: Request, res: Response) => {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // GET /api/admin/gps/dashboard - Dashboard stats GPS
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
+// Bug Fix #3: Fixed undefined in and() conditions
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-router.get('/dashboard', async (req: Request, res: Response) => {
+router.get('/dashboard', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const { entity, startDate, endDate } = req.query;
 
     // Dates par défaut : 30 derniers jours
     const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate as string) : new Date();
+
+    // Bug Fix #3: Build conditions properly without undefined
+    const positionsConditions = buildConditions([
+      gte(gpsPositions.capturedAt, start),
+      entity ? eq(gpsPositions.entity, entity as string) : undefined
+    ]);
+
+    const opportunitiesConditions = buildConditions([
+      gte(gpsOpportunities.detectedAt, start),
+      entity ? eq(gpsOpportunities.entity, entity as string) : undefined
+    ]);
+
+    const dailyStatsConditions = buildConditions([
+      gte(gpsDailyStats.statDate, start.toISOString().split('T')[0] as any),
+      entity ? eq(gpsDailyStats.entity, entity as string) : undefined
+    ]);
 
     // Statistiques positions GPS
     const positionsQuery = db
@@ -156,13 +187,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         distinctUsers: sql<number>`COUNT(DISTINCT user_id)::int`,
         avgAccuracy: sql<number>`AVG(accuracy)::float`,
       })
-      .from(gpsPositions)
-      .where(
-        and(
-          gte(gpsPositions.capturedAt, start),
-          entity ? eq(gpsPositions.entity, entity as string) : undefined
-        )
-      );
+      .from(gpsPositions);
+    
+    if (positionsConditions) {
+      positionsQuery.where(positionsConditions);
+    }
 
     // Statistiques opportunités
     const opportunitiesQuery = db
@@ -172,13 +201,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         accepted: sql<number>`COUNT(*) FILTER (WHERE status = 'accepted')::int`,
         avgPriority: sql<number>`AVG(priority_score)::float`,
       })
-      .from(gpsOpportunities)
-      .where(
-        and(
-          gte(gpsOpportunities.detectedAt, start),
-          entity ? eq(gpsOpportunities.entity, entity as string) : undefined
-        )
-      );
+      .from(gpsOpportunities);
+
+    if (opportunitiesConditions) {
+      opportunitiesQuery.where(opportunitiesConditions);
+    }
 
     // Statistiques journalières
     const dailyStatsQuery = db
@@ -187,13 +214,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         totalVisits: sql<number>`SUM(visits_count)::int`,
         avgWorkingHours: sql<number>`AVG(working_hours)::float`,
       })
-      .from(gpsDailyStats)
-      .where(
-        and(
-          gte(gpsDailyStats.statDate, start.toISOString().split('T')[0] as any),
-          entity ? eq(gpsDailyStats.entity, entity as string) : undefined
-        )
-      );
+      .from(gpsDailyStats);
+
+    if (dailyStatsConditions) {
+      dailyStatsQuery.where(dailyStatsConditions);
+    }
 
     // Exécuter requêtes en parallèle
     const [positionsStats, opportunitiesStats, dailyStats] = await Promise.all([
@@ -222,11 +247,14 @@ router.get('/dashboard', async (req: Request, res: Response) => {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // POST /api/admin/gps/credentials - Créer credential API
+// Bug Fix #1: Changed req.user.id to req.session.userId
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-router.post('/credentials', async (req: Request, res: Response) => {
+router.post('/credentials', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    // Bug Fix #1: Use req.session.userId instead of req.user
+    if (!req.session.userId) {
       return res.status(401).json({
         success: false,
         error: 'Authentification requise',
@@ -241,7 +269,7 @@ router.post('/credentials', async (req: Request, res: Response) => {
       ? encryptionService.encrypt(validatedData.apiSecret)
       : undefined;
 
-    // Créer credential
+    // Créer credential - Bug Fix #1: Use req.session.userId
     const [credential] = await db
       .insert(apiCredentials)
       .values({
@@ -252,8 +280,8 @@ router.post('/credentials', async (req: Request, res: Response) => {
         additionalConfig: validatedData.additionalConfig || undefined,
         isActive: validatedData.isActive ?? false,
         monthlyQuota: validatedData.monthlyQuota || undefined,
-        createdBy: req.user.id,
-        updatedBy: req.user.id,
+        createdBy: req.session.userId,
+        updatedBy: req.session.userId,
       } as any)
       .returning();
 
@@ -288,9 +316,10 @@ router.post('/credentials', async (req: Request, res: Response) => {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // GET /api/admin/gps/credentials - Liste credentials API
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-router.get('/credentials', async (req: Request, res: Response) => {
+router.get('/credentials', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const credentials = await db.query.apiCredentials.findMany({
       orderBy: [desc(apiCredentials.createdAt)],
@@ -319,10 +348,11 @@ router.get('/credentials', async (req: Request, res: Response) => {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MODULE P3.5 - BATCH GEOCODING PROSPECTS
+// Bug Fix #2: Added isAuthenticated, isAdmin middleware
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // GET /api/admin/gps/geocoding/stats - Stats géocodage prospects
-router.get('/geocoding/stats', async (req: Request, res: Response) => {
+router.get('/geocoding/stats', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const stats = await batchGeocodingService.getStats();
     
@@ -340,7 +370,7 @@ router.get('/geocoding/stats', async (req: Request, res: Response) => {
 });
 
 // POST /api/admin/gps/geocoding/batch - Lancer géocodage batch
-router.post('/geocoding/batch', async (req: Request, res: Response) => {
+router.post('/geocoding/batch', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const { entity, limit = 100, throttleMs = 1000 } = req.body;
 
@@ -368,7 +398,7 @@ router.post('/geocoding/batch', async (req: Request, res: Response) => {
 });
 
 // POST /api/admin/gps/geocoding/:prospectId - Géocoder un prospect
-router.post('/geocoding/:prospectId', async (req: Request, res: Response) => {
+router.post('/geocoding/:prospectId', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
     const { prospectId } = req.params;
 
