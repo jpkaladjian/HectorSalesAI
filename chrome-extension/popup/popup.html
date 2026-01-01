@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hector LinkedIn Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="../icons/icon48.png" alt="Hector" class="logo">
+      <h1>Hector Assistant</h1>
+    </header>
+
+    <div id="auth-status" class="status-bar">
+      <span id="user-info">Vérification...</span>
+      <button id="logout-btn" class="btn-secondary" style="display:none;">Déconnexion</button>
+    </div>
+
+    <main>
+      <div id="not-linkedin" class="message info" style="display:none;">
+        <p>🔍 Naviguez sur LinkedIn pour utiliser Hector</p>
+      </div>
+
+      <div id="linkedin-active" style="display:none;">
+        <section class="card">
+          <h2>🎯 Prospect Détecté</h2>
+          <div id="prospect-info">
+            <p><strong>Nom:</strong> <span id="prospect-nom">-</span></p>
+            <p><strong>Entreprise:</strong> <span id="prospect-entreprise">-</span></p>
+            <p><strong>Poste:</strong> <span id="prospect-poste">-</span></p>
+          </div>
+          <button id="add-prospect-btn" class="btn-primary">➕ Ajouter au CRM</button>
+        </section>
+
+        <section class="card">
+          <h2>💬 Message Personnalisé</h2>
+          <div class="form-group">
+            <label for="canal-select">Canal:</label>
+            <select id="canal-select">
+              <option value="linkedin_message">Message LinkedIn</option>
+              <option value="linkedin_invitation">Invitation LinkedIn</option>
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+            </select>
+          </div>
+          <button id="generate-msg-btn" class="btn-primary">✨ Générer Message IA</button>
+          <div id="generated-message" class="message-box" style="display:none;">
+            <textarea id="message-content" rows="6"></textarea>
+            <button id="copy-msg-btn" class="btn-secondary">📋 Copier</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>📊 Recommandations</h2>
+          <div id="recommendations">
+            <p class="loading">Chargement...</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <p class="text-muted">Powered by ADS GROUP</p>
+    </footer>
+  </div>
+
+  <script src="../lib/api-client.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

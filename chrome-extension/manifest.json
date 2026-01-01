@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Hector LinkedIn Assistant",
+  "version": "1.0.0",
+  "description": "Assistant IA pour la prospection LinkedIn - ADS GROUP",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.replit.app/*",
+    "http://localhost:5000/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Hector LinkedIn Assistant"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.linkedin.com/*"],
+      "js": ["content/linkedin-inject.js"],
+      "css": ["content/linkedin-styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://*.linkedin.com/*"]
+    }
+  ]
+}

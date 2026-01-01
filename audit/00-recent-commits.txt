@@ -1,0 +1,30 @@
+99bd120 Add initial audit prompt and setup script for Hector AI agent
+ea4949f Add comprehensive technical documentation for the Hector Sales AI platform
+31a9a30 Add a central document for extracting and correcting all text content
+bf5caec Add detailed user guide for Hector AI sales assistant
+e11e1c8 Adjust image positioning for better visual appeal on different screen sizes
+a629ca4 Adjust spacing on welcome screen for better visual appeal
+027334f Add training and sales support AI agent with web chat interface
+2dc7a49 Update branding to reflect company name change to ADS GROUP SECURITY
+106a415 Update company name to ADS GROUP SECURITY throughout the application
+06b89ce Add image asset to the project repository
+731fdc1 Add a new image to the project assets
+9c04bf9 Add a new visual asset to the project
+efb73b9 Improve welcome screen layout and text contrast for better readability
+d8159f8 Add visual assets to improve application presentation
+de2e6a7 Optimize welcome screen layout for mobile devices
+645d9ce Display Hector's introduction text next to the image on the welcome screen
+7719149 Update the welcome screen to display the hero image more prominently
+d7d3448 Improve image display and positioning to ensure visibility
+adaceaa Improve image visibility and text appearance on the welcome screen
+19e181b Improve the user interface for better visual clarity
+e2823c8 Update website appearance and navigation label for better mobile experience
+7d56821 Update the welcome screen with a new hero image and design
+b61ec37 Created a checkpoint
+1c88420 Update welcome screen to feature Hector's avatar more prominently
+f5575b4 Revert changes to image assets
+508015e Restore previous version of the application
+eed5d5e Add a new image asset to the project documentation
+bba02a1 Add a success message and visual indicator for accepted invites
+6da0d79 Add image asset for Hector AI assistant
+12bd45d Improve the design and styling of password reset emails

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Préparation RDV - {{ entreprise.nom }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-right {
+                content: "Page " counter(page) " / " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1e3a5f;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+        
+        h1 {
+            color: #1e3a5f;
+            font-size: 24pt;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #1e3a5f;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #1e3a5f;
+            font-size: 18pt;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-left: 4px solid #1e3a5f;
+            padding-left: 10px;
+        }
+        
+        h3 {
+            color: #2c5f8d;
+            font-size: 14pt;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #1e3a5f;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 12pt;
+            color: #666;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th {
+            background-color: #1e3a5f;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .info-box {
+            background-color: #f0f4f8;
+            border-left: 4px solid #1e3a5f;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .profile-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14pt;
+        }
+        
+        .profile-D {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .profile-I {
+            background-color: #ffc107;
+            color: #333;
+        }
+        
+        .profile-S {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .profile-C {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin: 5px 0;
+        }
+        
+        .checklist {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .checklist li:before {
+            content: "☐ ";
+            font-size: 14pt;
+            margin-right: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+            margin-top: 30px;
+        }
+        
+        .error-notice {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 10pt;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1 - COUVERTURE -->
+<div class="page-break">
+    <div class="header">
+        <div class="logo">ADS GROUP Security</div>
+        <div class="subtitle">Hector Ready - Préparation RDV Commercial</div>
+    </div>
+    
+    <h1 style="text-align: center; margin-top: 100px;">Préparation RDV</h1>
+    <h2 style="text-align: center; font-size: 20pt; border: none;">{{ entreprise.nom }}</h2>
+    
+    <div class="info-box" style="margin-top: 80px;">
+        <table style="border: none;">
+            <tr>
+                <td style="border: none; font-weight: bold; width: 30%;">Date RDV :</td>
+                <td style="border: none;">{{ rdv.dateRdv | format_date }}</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">Lieu :</td>
+                <td style="border: none;">{{ rdv.lieu or "Non spécifié" }}</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">Contact :</td>
+                <td style="border: none;">{{ contact.prenom }} {{ contact.nom }}{% if contact.fonction %} - {{ contact.fonction }}{% endif %}</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">Objectif :</td>
+                <td style="border: none;">{{ rdv.objectif or "Présentation solution ADS GROUP" }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="footer" style="position: absolute; bottom: 50px; width: 100%;">
+        <p>Document généré automatiquement par Hector Ready</p>
+        <p>{{ date_generation }}</p>
+    </div>
+</div>
+
+<!-- PAGE 2 - SYNTHÈSE ENTREPRISE -->
+<div class="page-break">
+    <h1>Synthèse Entreprise</h1>
+    
+    {% if pappers and pappers.details %}
+    <div class="success-box">
+        <h3>Informations Légales (Pappers)</h3>
+        <table>
+            <tr>
+                <td style="font-weight: bold; width: 30%;">Dénomination</td>
+                <td>{{ pappers.details.denomination or pappers.details.nom_entreprise }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">SIREN / SIRET</td>
+                <td>{{ pappers.details.siren }} / {{ pappers.details.siret }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Forme juridique</td>
+                <td>{{ pappers.details.forme_juridique }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Siège social</td>
+                <td>{{ pappers.details.siege.adresse_ligne_1 }}, {{ pappers.details.siege.code_postal }} {{ pappers.details.siege.ville }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Date de création</td>
+                <td>{{ pappers.details.date_creation }}</td>
+            </tr>
+            {% if pappers.details.capital %}
+            <tr>
+                <td style="font-weight: bold;">Capital</td>
+                <td>{{ pappers.details.capital | format_currency }}</td>
+            </tr>
+            {% endif %}
+            {% if pappers.details.chiffre_affaires %}
+            <tr>
+                <td style="font-weight: bold;">Chiffre d'affaires</td>
+                <td>{{ pappers.details.chiffre_affaires | format_currency }}</td>
+            </tr>
+            {% endif %}
+            {% if pappers.details.effectif %}
+            <tr>
+                <td style="font-weight: bold;">Effectif</td>
+                <td>{{ pappers.details.effectif }} salariés</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if pappers.details.dirigeants %}
+    <h3>Dirigeants</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Fonction</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dirigeant in pappers.details.dirigeants %}
+            <tr>
+                <td>{{ dirigeant.nom }}</td>
+                <td>{{ dirigeant.prenom }}</td>
+                <td>{{ dirigeant.fonction }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    
+    {% if pappers.multiEntites and pappers.multiEntites.entreprises %}
+    <h3>Multi-Entités Détectées</h3>
+    <div class="info-box">
+        <p><strong>Le dirigeant principal possède {{ pappers.multiEntites.total_resultats }} autre(s) entreprise(s) :</strong></p>
+        <ul>
+            {% for entreprise in pappers.multiEntites.entreprises[:5] %}
+            <li>{{ entreprise.denomination or entreprise.nom_entreprise }} (SIREN: {{ entreprise.siren }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="warning-box">
+        <h3>Données Pappers non disponibles</h3>
+        {% if erreurs and erreurs.pappers %}
+        <p><strong>Raison :</strong> {{ erreurs.pappers }}</p>
+        {% endif %}
+        <p><strong>Actions recommandées :</strong></p>
+        <ul>
+            <li>Recherche manuelle sur Société.com ou Infogreffe</li>
+            <li>Vérifier orthographe exacte du nom d'entreprise</li>
+            <li>Demander SIREN/SIRET directement au contact</li>
+            <li>Consulter le site web de l'entreprise pour informations publiques</li>
+        </ul>
+        <p><strong>Éléments à identifier en RDV :</strong></p>
+        <ul class="checklist">
+            <li>Date de création et taille de l'entreprise</li>
+            <li>Structure juridique et dirigeants</li>
+            <li>Effectif et chiffre d'affaires (si possible)</li>
+            <li>Autres sites/entités du groupe</li>
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PAGE 3 - VEILLE WEB -->
+<div class="page-break">
+    <h1>Veille Web & Actualités</h1>
+    
+    {% if brave and brave.entreprise %}
+    <h3>Recherche Entreprise "{{ entreprise.nom }}"</h3>
+    <div class="info-box">
+        {% for result in brave.entreprise.results[:5] %}
+        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+            <p style="font-weight: bold; margin: 5px 0;">{{ result.title }}</p>
+            <p style="font-size: 9pt; color: #666; margin: 3px 0;">{{ result.url }}</p>
+            <p style="margin: 5px 0;">{{ result.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if brave and brave.contact %}
+    <h3>Recherche Contact "{{ contact.prenom }} {{ contact.nom }}"</h3>
+    <div class="info-box">
+        {% for result in brave.contact.results[:3] %}
+        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+            <p style="font-weight: bold; margin: 5px 0;">{{ result.title }}</p>
+            <p style="font-size: 9pt; color: #666; margin: 3px 0;">{{ result.url }}</p>
+            <p style="margin: 5px 0;">{{ result.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if brave and brave.actualites %}
+    <h3>Actualités Récentes</h3>
+    <div class="success-box">
+        {% for result in brave.actualites.results[:5] %}
+        <div style="margin-bottom: 15px;">
+            <p style="font-weight: bold; margin: 5px 0;">{{ result.title }}</p>
+            <p style="margin: 5px 0; font-size: 10pt;">{{ result.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if not brave or (not brave.entreprise and not brave.contact and not brave.actualites) %}
+    <div class="error-notice">
+        {% if erreurs and erreurs.braveSearch %}
+        Erreur Brave Search: {{ erreurs.braveSearch }}
+        {% else %}
+        Aucune donnée de veille web disponible
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- PAGE 4 - ANALYSE DISC -->
+<div class="page-break">
+    <h1>Analyse DISC & Recommandations</h1>
+    
+    {% if disc and disc.profil_disc %}
+    <div class="success-box">
+        <h3>Profil DISC Détecté</h3>
+        <p>
+            <span class="profile-badge profile-{{ disc.profil_disc.profil_principal }}">
+                Profil {{ disc.profil_disc.profil_principal }}
+                {% if disc.profil_disc.profil_secondaire %} / {{ disc.profil_disc.profil_secondaire }}{% endif %}
+            </span>
+            <span style="margin-left: 20px; font-size: 10pt;">Confiance: {{ disc.profil_disc.confiance }}</span>
+        </p>
+        <p style="margin-top: 10px;"><strong>Justification :</strong> {{ disc.profil_disc.justification }}</p>
+    </div>
+    
+    {% if disc.approche_commerciale %}
+    <h3>Approche Commerciale Recommandée</h3>
+    <table>
+        <tr>
+            <td style="font-weight: bold; width: 30%;">Style de communication</td>
+            <td>{{ disc.approche_commerciale.style_communication }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Rythme d'entretien</td>
+            <td>{{ disc.approche_commerciale.rythme_entretien }}</td>
+        </tr>
+    </table>
+    
+    <p><strong>Vocabulaire privilégié :</strong></p>
+    <ul>
+        {% for mot in disc.approche_commerciale.vocabulaire_privilegie %}
+        <li>{{ mot }}</li>
+        {% endfor %}
+    </ul>
+    
+    <div class="warning-box">
+        <p><strong>Points de vigilance :</strong></p>
+        <ul>
+            {% for point in disc.approche_commerciale.points_vigilance %}
+            <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="warning-box">
+        <h3>Analyse DISC non disponible</h3>
+        {% if erreurs and erreurs.claudeDisc %}
+        <p><strong>Raison :</strong> {{ erreurs.claudeDisc }}</p>
+        {% endif %}
+        <p><strong>Profil à déterminer en RDV.</strong></p>
+        
+        <h4>Conseils Génériques (MODULE 6 - DISC)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Profil</th>
+                    <th>Caractéristiques</th>
+                    <th>Approche Recommandée</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: bold;">D (Dominant)</td>
+                    <td>Direct, décideur, orienté résultats, impatient</td>
+                    <td>Aller droit au but, parler ROI, éviter détails inutiles</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">I (Influent)</td>
+                    <td>Relationnel, enthousiaste, aime partager, visionnaire</td>
+                    <td>Créer connexion, storytelling, parler vision et image</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">S (Stable)</td>
+                    <td>Calme, prudent, sécuritaire, fidèle, patient</td>
+                    <td>Rassurer, prendre le temps, fiabilité, témoignages</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">C (Conforme)</td>
+                    <td>Analytique, précis, méthodique, perfectionniste</td>
+                    <td>Données chiffrées, documentation complète, logique</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        {% if entreprise.secteur == "Pharmacie" %}
+        <h4>Recommandations Secteur Pharmacie</h4>
+        <div class="info-box">
+            <p><strong>Profils fréquents :</strong> C (Conforme) ou S (Stable)</p>
+            <p><strong>Approche :</strong> Mettre l'accent sur conformité réglementaire, sécurité des stocks de produits contrôlés, fiabilité du système, normes sanitaires.</p>
+            <p><strong>Vocabulaire :</strong> Conformité, normes, fiabilité, traçabilité, sécurité des données patients</p>
+        </div>
+        {% endif %}
+        
+        <p><strong>Éléments à observer en RDV pour identifier DISC :</strong></p>
+        <ul class="checklist">
+            <li>Rythme de parole (rapide = D/I, posé = S/C)</li>
+            <li>Style de questions (résultats = D, émotionnel = I, sécurité = S, détails = C)</li>
+            <li>Bureau/environnement (minimaliste = D, décoré = I, ordonné = C)</li>
+            <li>Réaction à l'urgence (positif = D/I, stress = S/C)</li>
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PAGE 5 - STRATÉGIE COMMERCIALE -->
+<div class="page-break">
+    <h1>Stratégie Commerciale</h1>
+    
+    {% if disc and disc.strategie_rdv %}
+    <div class="info-box">
+        <h3>Structure du RDV</h3>
+        <p><strong>Durée optimale :</strong> {{ disc.strategie_rdv.duree_optimale }}</p>
+        
+        <p><strong>Phases recommandées :</strong></p>
+        <ol>
+            {% for phase in disc.strategie_rdv.structure_recommandee %}
+            <li>{{ phase }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+    
+    {% if disc.strategie_rdv.modules_emotionnels %}
+    <h3>Modules Émotionnels (MODULE 5 ADN)</h3>
+    <table>
+        <tr>
+            <td style="font-weight: bold; width: 30%;">Coup de Casse</td>
+            <td>{{ disc.strategie_rdv.modules_emotionnels.coup_de_casse | upper }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">PDM (Peur De Manquer)</td>
+            <td>{{ disc.strategie_rdv.modules_emotionnels.pdm | upper }}</td>
+        </tr>
+    </table>
+    <p><strong>Justification dosage :</strong> {{ disc.strategie_rdv.modules_emotionnels.justification }}</p>
+    {% endif %}
+    
+    {% else %}
+    <!-- Stratégie générique si DISC non disponible -->
+    <div class="info-box">
+        <h3>APPROCHE : Identifier le profil DISC en début de RDV puis adapter</h3>
+        <p><strong>Durée recommandée :</strong> 60 minutes (ajuster selon profil détecté)</p>
+    </div>
+    {% endif %}
+    
+    <!-- MÉTHODE MOODSHOW (MODULE 2) - Toujours afficher -->
+    <h3>Méthode MOODSHOW (MODULE 2 - ADN HECTOR)</h3>
+    <div class="success-box">
+        <table style="border: none;">
+            <tr>
+                <td style="border: none; width: 20%; font-weight: bold;">PHASE 1<br/>(30% RDV)</td>
+                <td style="border: none;"><strong>DÉCOUVERTE</strong><br/>Créer curiosité + confiance. Poser questions ouvertes, écoute active.</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">PHASE 2<br/>(25% RDV)</td>
+                <td style="border: none;"><strong>SENSIBILISATION - Coup de Casse</strong><br/>Électrochoc maîtrisé. Chiffrer le risque actuel, scénario catastrophe crédible.</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">PHASE 3<br/>(30% RDV)</td>
+                <td style="border: none;"><strong>CONSEIL - Solution Quad-Core</strong><br/>Présenter solution IA adaptée. Démontrer valeur ajoutée concrète.</td>
+            </tr>
+            <tr>
+                <td style="border: none; font-weight: bold;">PHASE 4<br/>(15% RDV)</td>
+                <td style="border: none;"><strong>CLOSING - PDM</strong><br/>Peur De Manquer. Urgence d'agir, offre limitée, alternative closing.</td>
+            </tr>
+        </table>
+    </div>
+    
+    <h3>Modules Émotionnels (MODULE 5 - ADN HECTOR)</h3>
+    <div class="warning-box">
+        <p><strong>Coup de Casse (Phase 2) :</strong></p>
+        <ul>
+            <li>Chiffrer le risque actuel de non-protection</li>
+            <li>Scénario catastrophe crédible et mesuré</li>
+            <li>Impact business concret (perte stock, assurance, responsabilité)</li>
+        </ul>
+        <p><strong>PDM - Peur De Manquer (Phase 4) :</strong></p>
+        <ul>
+            <li>Offre limitée dans le temps (tarif promo, disponibilité)</li>
+            <li>Places disponibles pour installation ce trimestre</li>
+            <li>Exclusivité zone géographique possible</li>
+        </ul>
+    </div>
+    
+    <h3>Vocabulaire Strict (MODULE 1 - ADN HECTOR)</h3>
+    <div class="error-notice" style="background-color: #fff3cd; border-color: #ffc107; color: #856404;">
+        <table style="border: none;">
+            <tr>
+                <td style="border: none; width: 50%; font-weight: bold;">❌ NE JAMAIS DIRE :</td>
+                <td style="border: none; width: 50%; font-weight: bold;">✅ TOUJOURS DIRE :</td>
+            </tr>
+            <tr>
+                <td style="border: none;">"Client"</td>
+                <td style="border: none;">"Entreprise" ou "Commerce"</td>
+            </tr>
+            <tr>
+                <td style="border: none;">"Vendre"</td>
+                <td style="border: none;">"Accompagner"</td>
+            </tr>
+            <tr>
+                <td style="border: none;">"Installer des caméras"</td>
+                <td style="border: none;">"Déployer une solution"</td>
+            </tr>
+            <tr>
+                <td style="border: none;">"Particulier"</td>
+                <td style="border: none;">"Professionnel B2B"</td>
+            </tr>
+        </table>
+    </div>
+    
+    {% if disc and disc.argumentaire %}
+    <h3>Argumentaire Clés</h3>
+    <div class="success-box">
+        <ul>
+            {% for argument in disc.argumentaire.arguments_cles %}
+            <li><strong>{{ argument }}</strong></li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <h3>Objections Probables</h3>
+    <div class="warning-box">
+        <ul>
+            {% for objection in disc.argumentaire.objections_probables %}
+            <li>{{ objection }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <h3>Technique de Closing Recommandée</h3>
+    <div class="info-box">
+        <p>{{ disc.argumentaire.closing_recommande }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PAGE 6 - CHECKLIST RDV -->
+<div class="page-break">
+    <h1>Checklist Avant RDV</h1>
+    
+    <h3>Documents à Préparer</h3>
+    <ul class="checklist">
+        <li>Dossier commercial ADS GROUP (brochure solutions)</li>
+        <li>Tablette/PC pour démo produits</li>
+        <li>Grille tarifaire 2025</li>
+        <li>Exemples cas clients (secteur {{ entreprise.secteur or "similaire" }})</li>
+        <li>Carte de visite</li>
+    </ul>
+    
+    <h3>Questions Clés à Poser</h3>
+    <ul class="checklist">
+        <li>Quelle est votre situation actuelle en sécurité ?</li>
+        <li>Avez-vous déjà eu des incidents (vols, intrusions) ?</li>
+        <li>Quel est votre budget mensuel sécurité ?</li>
+        <li>Qui prend la décision finale ? (DISC important)</li>
+        <li>Quels sont vos délais ?</li>
+        <li>Avez-vous d'autres devis en cours ?</li>
+    </ul>
+    
+    <h3>Objectifs du RDV</h3>
+    <ul class="checklist">
+        <li>Établir la confiance (MOODSHOW Phase 1)</li>
+        <li>Découvrir les besoins réels</li>
+        <li>Identifier le profil DISC pour adapter le discours</li>
+        <li>Présenter la solution adaptée</li>
+        <li>Gérer les objections avec méthode 4A</li>
+        <li>Obtenir engagement sur prochaine étape</li>
+    </ul>
+    
+    {% if disc and disc.contexte_analyse %}
+    <h3>Informations à Compléter Pendant le RDV</h3>
+    <div class="warning-box">
+        {% if disc.contexte_analyse.lacunes_information %}
+        <p><strong>Lacunes à combler :</strong></p>
+        <ul>
+            {% for lacune in disc.contexte_analyse.lacunes_information %}
+            <li>{{ lacune }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="footer" style="margin-top: 50px;">
+        <p><strong>Bonne préparation et bon RDV !</strong></p>
+        <p style="font-size: 9pt; color: #666;">Hector Ready - Votre copilote IA ADS GROUP</p>
+    </div>
+</div>
+
+</body>
+</html>
