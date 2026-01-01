@@ -1,5 +1,10 @@
 import { Resend } from 'resend';
 
+// Bug Fix #4: Vérification RESEND_API_KEY
+if (!process.env.RESEND_API_KEY) {
+  console.error('[Email] ⚠️ RESEND_API_KEY is not configured! Email functionality will fail.');
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface SendPasswordResetEmailParams {
@@ -13,6 +18,12 @@ export async function sendPasswordResetEmail({
   resetToken,
   firstName
 }: SendPasswordResetEmailParams): Promise<void> {
+  // Bug Fix: Check API key before sending
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] Cannot send email: RESEND_API_KEY not configured');
+    throw new Error('Service email non configuré');
+  }
+
   const resetUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
   
   const userName = firstName || to.split('@')[0];
@@ -185,6 +196,12 @@ export async function sendWelcomeEmail({
   firstName,
   temporaryPassword
 }: SendWelcomeEmailParams): Promise<void> {
+  // Bug Fix: Check API key before sending
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] Cannot send email: RESEND_API_KEY not configured');
+    throw new Error('Service email non configuré');
+  }
+
   const loginUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/login`;
   const userName = firstName || to.split('@')[0];
 
@@ -406,7 +423,12 @@ export async function sendInvitationEmail({
   role,
   invitedByName
 }: SendInvitationEmailParams): Promise<void> {
-  const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000';
+  // Bug Fix: Check API key before sending
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] Cannot send email: RESEND_API_KEY not configured');
+    throw new Error('Service email non configuré');
+  }
+
   const userName = to.split('@')[0];
   const roleLabel = role === 'admin' ? 'Administrateur' : 'Commercial';
   const inviter = invitedByName || 'ton administrateur';
